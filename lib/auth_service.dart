@@ -2,6 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -10,6 +11,19 @@ class AuthService {
   // Expose the auth state changes stream
   Stream<User?> authStateChanges() {
     return _auth.authStateChanges();
+  }
+
+  // Initialize Firebase App Check
+  Future<void> initializeAppCheck() async {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug,
+        webProvider: ReCaptchaV3Provider('6LeqwwwrAAAAAGrY-j9u3RtDKjjjo3JGLunXHjwt'),
+      );
+      print('Firebase App Check initialized successfully.');
+    } catch (e) {
+      print('Error initializing Firebase App Check: $e');
+    }
   }
 
   // Sign up with email and password
@@ -58,13 +72,22 @@ class AuthService {
   // Sign in with email and password
   Future<User?> signInWithEmailPassword(String email, String password) async {
     try {
-      UserCredential result = await _auth.signInWithEmailAndPassword(
+      print('Attempting to sign in with email: $email'); // Debug log
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return result.user;
-    } on FirebaseAuthException {
-      rethrow;
+      return userCredential.user; // Return the signed-in user
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'invalid-credential') {
+        print('Invalid credential: ${e.message}');
+      } else if (e.code == 'app-check-token-error') {
+        print('App Check token error: ${e.message}');
+      }
+      rethrow; // Rethrow the exception to be handled by the caller
+    } catch (e) {
+      print('Unexpected error: $e'); // Debug log
+      rethrow; // Rethrow the exception to be handled by the caller
     }
   }
 

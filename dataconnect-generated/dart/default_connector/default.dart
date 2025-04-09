@@ -1,7 +1,5 @@
-// ignore_for_file: unused_import, unnecessary_library_name
-library default_connector;
+library;
 import 'package:firebase_data_connect/firebase_data_connect.dart';
-import 'dart:convert';
 
 
 

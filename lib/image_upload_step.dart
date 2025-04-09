@@ -79,23 +79,19 @@ Future<void> _removeBackground(int index) async {
   try {
     final Uint8List imageBytes = await _images[index].readAsBytes();
 
-    final ui.Image? outputImage = await BackgroundRemover.instance.removeBg(imageBytes);
+    final ui.Image outputImage = await BackgroundRemover.instance.removeBg(imageBytes);
 
-    if (outputImage != null) {
-      final byteData = await outputImage.toByteData(format: ui.ImageByteFormat.png);
-      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+    final byteData = await outputImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = await File(
-        '${tempDir.path}/image_${DateTime.now().millisecondsSinceEpoch}.png',
-      ).writeAsBytes(pngBytes);
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = await File(
+      '${tempDir.path}/image_${DateTime.now().millisecondsSinceEpoch}.png',
+    ).writeAsBytes(pngBytes);
 
-      setState(() {
-        _images[index] = tempFile;
-      });
-    } else {
-      _showErrorSnackBar('Background removal failed.');
-    }
+    setState(() {
+      _images[index] = tempFile;
+    });
   } catch (e) {
     _showErrorSnackBar('Error removing background: $e');
   } finally {
