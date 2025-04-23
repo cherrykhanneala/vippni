@@ -4,19 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:vipnni/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import 'signup_screen.dart';
-import 'product_upload_screen.dart';
-import 'products_screen.dart';
-import 'orders_screen.dart';
-import 'forgot_password.dart';
-import 'home_screen.dart';
-import 'profile_menu/seller_account.dart';
-import 'splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/products/product_upload_screen.dart';
+import 'screens/products/products_screen.dart';
+import 'screens/orders/orders_screen.dart';
+import 'screens/auth/forgot_password.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/profile_menu/seller_account.dart';
+import 'screens/splash_screen.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dashboard_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -123,6 +125,16 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Vipnni Seller',
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        // Add other locales as needed
+      ],
       theme: ThemeData(
         primaryColor: const Color(0xFF31135F),
         hintColor: const Color(0xFFFFB23D),
@@ -218,9 +230,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
-
-
-
 
 //AIzaSyCyYaC1lpWX_nzuALrxUMXy7gWzdSiwtV0
 

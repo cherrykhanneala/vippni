@@ -65,6 +65,9 @@ dependencies:
   cached_network_image: ^3.4.1
   firebase_messaging: ^15.1.3
   firebase_data_connect: ^0.1.3+2
+  flex_color_scheme: ^8.2.0
+  connectivity_plus: ^6.1.3
+  firebase_analytics: ^11.4.5
 
 dev_dependencies:
   flutter_test:
@@ -92,7 +95,6 @@ flutter_icons:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -101,7 +103,7 @@ flutter:
 
   # Localization settings
   assets:
-    - lib/110n/
+    - lib/l10n/
     - assets/default_profile.png
     - assets/vipnni_app_icon.png
 

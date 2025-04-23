@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // Import the intl package for date formatting
-import '../product_display.dart';
+import '../screens/products/product_display.dart';
 
 class OrderDetailsWidget extends StatefulWidget {
   final DocumentSnapshot order;

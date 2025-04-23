@@ -1,0 +1,215 @@
+{
+  "project_info": {
+    "project_number": "856962758049",
+    "firebase_url": "https://vipnni-bb870-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "vipnni-bb870",
+    "storage_bucket": "vipnni-bb870.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856962758049:android:9daf26bdaebed3052c47e0",
+        "android_client_info": {
+          "package_name": "com.example.vipnni"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856962758049-sr3at60j5pt1nerb8bgcv5f6232auufm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vipnni",
+            "certificate_hash": "3e213934da06a75a18c1d6589b6290b6c8a3906e"
+          }
+        },
+        {
+          "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsXGp7QGtPyiD-autMIF-ltAo6KrhXA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vipnni"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856962758049:android:220b3e0fb75801722c47e0",
+        "android_client_info": {
+          "package_name": "com.vipnni.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856962758049-djgrtqksrtc2bf58c8h1m3viitfvbmh1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vipnni.app",
+            "certificate_hash": "3e213934da06a75a18c1d6589b6290b6c8a3906e"
+          }
+        },
+        {
+          "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsXGp7QGtPyiD-autMIF-ltAo6KrhXA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vipnni"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856962758049:android:c3354b678794a8412c47e0",
+        "android_client_info": {
+          "package_name": "com.vipnnishopper.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsXGp7QGtPyiD-autMIF-ltAo6KrhXA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vipnni"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856962758049:android:3696524afb9dbdb92c47e0",
+        "android_client_info": {
+          "package_name": "com.vippni.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856962758049-f2gdgkrsf60t3jad5chd5gdhsffdv0d8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vippni.app",
+            "certificate_hash": "4d2da6e34437d1a026f0675ad490c9c764807089"
+          }
+        },
+        {
+          "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsXGp7QGtPyiD-autMIF-ltAo6KrhXA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vipnni"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856962758049:android:b85706a6827749422c47e0",
+        "android_client_info": {
+          "package_name": "com.vshopper.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsXGp7QGtPyiD-autMIF-ltAo6KrhXA6Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "856962758049-3pr1fnsa6tusdk6cbjorjifpmj2s94gd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vipnni"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

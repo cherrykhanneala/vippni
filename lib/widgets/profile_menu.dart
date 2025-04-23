@@ -1,12 +1,12 @@
 // profile_menu.dart
 
 import 'package:flutter/material.dart';
-import '../profile_menu/change_language_screen.dart';
-import '../profile_menu/terms_conditions_screen.dart';
-import '../profile_menu/privacy_policy_screen.dart';
-import '../profile_menu/contact_us_screen.dart';
-import '../profile_menu/return_policy_screen.dart';
-import '../profile_menu/shipping_policy_screen.dart';
+import '../screens/profile_menu/change_language_screen.dart';
+import '../screens/profile_menu/terms_conditions_screen.dart';
+import '../screens/profile_menu/privacy_policy_screen.dart';
+import '../screens/profile_menu/contact_us_screen.dart';
+import '../screens/profile_menu/return_policy_screen.dart';
+import '../screens/profile_menu/shipping_policy_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 
 class ProfileMenu extends StatelessWidget {

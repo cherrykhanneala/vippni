@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../product_edit_screen.dart';
+import '../screens/products/product_edit_screen.dart';
 
 class ProductCard extends StatelessWidget {
   final DocumentSnapshot product;
