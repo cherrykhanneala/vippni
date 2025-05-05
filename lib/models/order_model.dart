@@ -1,63 +1,68 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OrderModel {
   final String id;
+  final String orderNumber;
   final String customerId;
   final DateTime date;
-  final double total;
+  final double totalPrice; // This is what we use throughout
   final String status;
   final List<OrderItem> items;
   final Map<String, dynamic>? metadata;
+  final Map<String, dynamic>? payment;
+  final Map<String, dynamic>? shipping;
 
-  // These fields are not present in your Firestore, so make them nullable
+  // Customer details fetched separately
   final String? customerName;
   final String? customerEmail;
-  final String? customerPhone;
-  final ShippingInfo? shipping;
-  final PaymentInfo? payment;
+  final Map<String, dynamic>? customerAddress;
 
   OrderModel({
     required this.id,
+    required this.orderNumber,
     required this.customerId,
     required this.date,
-    required this.total,
+    required this.totalPrice, // Changed from total
     required this.status,
     required this.items,
+    this.metadata,
+    this.payment,
+    this.shipping,
     this.customerName,
     this.customerEmail,
-    this.customerPhone,
-    this.shipping,
-    this.payment,
-    this.metadata,
+    this.customerAddress,
   });
 
   OrderModel copyWith({
     String? id,
+    String? orderNumber,
     String? customerId,
     DateTime? date,
-    double? total,
+    double? totalPrice,
     String? status,
     List<OrderItem>? items,
     String? customerName,
     String? customerEmail,
-    String? customerPhone,
-    ShippingInfo? shipping,
-    PaymentInfo? payment,
+    Map<String, dynamic>? customerAddress,
     Map<String, dynamic>? metadata,
+    Map<String, dynamic>? payment,
+    Map<String, dynamic>? shipping,
   }) {
     return OrderModel(
       id: id ?? this.id,
+      orderNumber: orderNumber ?? this.orderNumber,
       customerId: customerId ?? this.customerId,
       date: date ?? this.date,
-      total: total ?? this.total,
+      totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       items: items ?? this.items,
       customerName: customerName ?? this.customerName,
       customerEmail: customerEmail ?? this.customerEmail,
-      customerPhone: customerPhone ?? this.customerPhone,
-      shipping: shipping ?? this.shipping,
-      payment: payment ?? this.payment,
+      customerAddress: customerAddress ?? this.customerAddress,
       metadata: metadata ?? this.metadata,
+      payment: payment ?? this.payment,
+      shipping: shipping ?? this.shipping,
     );
   }
 
@@ -71,70 +76,161 @@ class OrderModel {
           .toList();
     }
 
+    // Get status from first item that matches vendor ID
+    final currentVendorId = FirebaseAuth.instance.currentUser?.uid;
+    final vendorItems = items.where((item) => item.vendorId == currentVendorId).toList();
+    final status = vendorItems.isNotEmpty ? vendorItems.first.status : 'Pending';
+
+    // Add safe type checking for shipping and payment
+    Map<String, dynamic>? shippingData;
+    if (data['shipping'] != null && data['shipping'] is Map) {
+      shippingData = Map<String, dynamic>.from(data['shipping'] as Map);
+    }
+
+    Map<String, dynamic>? paymentData;
+    if (data['payment'] != null && data['payment'] is Map) {
+      paymentData = Map<String, dynamic>.from(data['payment'] as Map);
+    }
+
     return OrderModel(
       id: doc.id,
+      orderNumber: data['orderNumber'] ?? '',
       customerId: data['userId'] ?? '',
       date: (data['orderDate'] as Timestamp).toDate(),
-      total: (data['totalPrice'] ?? 0).toDouble(),
-      status: items.isNotEmpty ? items.first.status : 'Pending',
+      totalPrice: (data['totalPrice'] ?? 0).toDouble(),
+      status: status, // Use vendor's item status
       items: items,
-      // These fields are not present in your Firestore, so set as null
       customerName: null,
       customerEmail: null,
-      customerPhone: null,
-      shipping: null,
-      payment: null,
-      metadata: data['metadata'],
+      customerAddress: null,
+      shipping: shippingData,
+      payment: paymentData,
+      metadata: data['metadata'] is Map ? Map<String, dynamic>.from(data['metadata'] as Map) : null,
+    );
+  }
+
+  static Future<OrderModel> fromFirestoreWithCustomer(DocumentSnapshot doc) async {
+    final data = doc.data() as Map<String, dynamic>;
+    
+    // Fetch customer details
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(data['userId'])
+        .get();
+    
+    final userData = userDoc.data();
+
+    List<OrderItem> items = [];
+    if (data['items'] != null) {
+      items = (data['items'] as List)
+          .map((item) => OrderItem.fromMap(item))
+          .toList();
+    }
+
+    // Get status from first item that matches vendor ID (same logic as fromFirestore)
+    final currentVendorId = FirebaseAuth.instance.currentUser?.uid;
+    final vendorItems = items.where((item) => item.vendorId == currentVendorId).toList();
+    final status = vendorItems.isNotEmpty ? vendorItems.first.status : 'Pending';
+
+    // Add safe type checking for shipping and payment
+    Map<String, dynamic>? shippingData;
+    if (data['shipping'] != null && data['shipping'] is Map) {
+      shippingData = Map<String, dynamic>.from(data['shipping'] as Map);
+    }
+
+    Map<String, dynamic>? paymentData;
+    if (data['payment'] != null && data['payment'] is Map) {
+      paymentData = Map<String, dynamic>.from(data['payment'] as Map);
+    }
+
+    return OrderModel(
+      id: doc.id,
+      orderNumber: data['orderNumber'] ?? '',
+      customerId: data['userId'] ?? '',
+      date: (data['orderDate'] as Timestamp).toDate(),
+      totalPrice: (data['totalPrice'] ?? 0).toDouble(),
+      status: status, // Use vendor's item status
+      items: items,
+      customerName: userData?['fullName'],
+      customerEmail: userData?['email'],
+      customerAddress: userData?['address'],
+      shipping: shippingData,
+      payment: paymentData,
+      metadata: data['metadata'] is Map ? Map<String, dynamic>.from(data['metadata'] as Map) : null,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'orderNumber': orderNumber,
       'userId': customerId,
       'orderDate': Timestamp.fromDate(date),
-      'totalPrice': total,
+      'totalPrice': totalPrice,
+      // Don't include global status in map since we're using per-item status
       'items': items.map((item) => item.toMap()).toList(),
       'metadata': metadata,
+      'payment': payment,
+      'shipping': shipping,
     };
   }
 }
 
 class OrderItem {
   final String productId;
-  final String productName;
+  final String name; // Changed from productName to match Firebase
   final int quantity;
-  final double price;
+  final double price; // Changed to double to handle both int and double
   final String status;
   final String vendorId;
+  final String? trackingNumber;
+  final double? weight; // Direct field for weight
+  final String? size; // Direct field for size
+  final String? shippingCost;
+  final Map<String, dynamic>? metadata; // Add metadata field
 
   OrderItem({
     required this.productId,
-    required this.productName,
+    required this.name,
     required this.quantity,
     required this.price,
     required this.status,
     required this.vendorId,
+    this.trackingNumber,
+    this.weight,
+    this.size,
+    this.shippingCost,
+    this.metadata, // Initialize metadata
   });
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
       productId: map['productId'] ?? '',
-      productName: map['name'] ?? '',
+      name: map['name'] ?? '',
       quantity: map['quantity'] ?? 0,
       price: (map['price'] ?? 0).toDouble(),
-      status: map['status'] ?? '',
+      status: map['status'] ?? 'Pending',
       vendorId: map['vendorId'] ?? '',
+      trackingNumber: map['trackingNumber'],
+      weight: (map['weight'] ?? 0).toDouble(),
+      size: map['size'],
+      shippingCost: map['shippingCost'],
+      metadata: map['metadata'] ?? {}, // Parse metadata
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
       'productId': productId,
-      'name': productName,
+      'name': name,
       'quantity': quantity,
       'price': price,
       'status': status,
       'vendorId': vendorId,
+      'trackingNumber': trackingNumber,
+      'weight': weight,
+      'size': size,
+      'shippingCost': shippingCost,
+      'metadata': metadata, // Include metadata in map
     };
   }
 }

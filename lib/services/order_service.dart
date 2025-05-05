@@ -177,11 +177,11 @@ class OrderService {
       Set<String> uniqueCustomers = {};
       
       for (var order in orders) {
-        totalRevenue += order.total;
+        totalRevenue += order.totalPrice;
         statusCounts[order.status] = (statusCounts[order.status] ?? 0) + 1;
         
         final dateString = '${order.date.year}-${order.date.month}-${order.date.day}';
-        dailyRevenue[dateString] = (dailyRevenue[dateString] ?? 0) + order.total;
+        dailyRevenue[dateString] = (dailyRevenue[dateString] ?? 0) + order.totalPrice;
         
         uniqueCustomers.add(order.customerId);
       }

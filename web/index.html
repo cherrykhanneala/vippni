@@ -1,19 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
+<!-- 1. The core Firebase SDK -->
+  <script type="module">
+    // 2. Import the modules you need from the JS SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
 
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
+    // 3. Your Firebase project’s configuration (copy from your console)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBvu0qD04nkrbjLNChJwSahJdSZKh9-VYM",
+      authDomain: "vipnni-bb870.firebaseapp.com",
+      databaseURL: "https://vipnni-bb870-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "vipnni-bb870",
+      storageBucket: "vipnni-bb870.appspot.com",
+      messagingSenderId: "856962758049",
+      appId: "1:856962758049:web:f382a8081e1a7d982c47e0",
+      measurementId: "G-XMN3NHYQK3"
+    };
 
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+    // 4. Initialize Firebase **first thing**
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+    // 5. Then your login call
+    signInWithEmailAndPassword(auth, email, password)
+      .then((cred) => {
+        // logged in
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  </script>
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">

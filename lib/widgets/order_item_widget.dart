@@ -1,55 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/order_model.dart';
+import '../screens/orders/order_details_screen.dart';
 
 class OrderItemWidget extends StatelessWidget {
   final OrderModel order;
-  final VoidCallback onView;
-  final VoidCallback onEdit;
-  final VoidCallback? onLongPress;
 
   const OrderItemWidget({
     super.key,
     required this.order,
-    required this.onView,
-    required this.onEdit,
-    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
-    
-    return InkWell(
-      onLongPress: onLongPress,
-      child: Card(
-        child: ListTile(
-          title: Row(
-            children: [
-              Text('Order #${order.id}'),
-              const SizedBox(width: 8),
-              _buildStatusChip(order.status),
-            ],
+    return GestureDetector(
+      onTap: () {
+        // Navigate to the OrderDetailsScreen when the widget is tapped
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => OrderDetailsScreen(order: order),
           ),
-          subtitle: Column(
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(order.customerName ?? ''),
+              // Order Number and Date
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '#${order.orderNumber}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    DateFormat('dd MMM, yyyy').format(order.date),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Order Details
               Text(
-                '${DateFormat.yMMMd().format(order.date)} - ${currencyFormat.format(order.total)}',
+                'Order Details',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.visibility),
-                onPressed: onView,
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: onEdit,
+              const SizedBox(height: 8),
+              // Display each item with its status
+              ...order.items.map((item) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '• ${item.name}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    Chip(
+                      label: Text(item.status),
+                      backgroundColor: _getStatusColor(item.status),
+                    ),
+                  ],
+                );
+              }).toList(),
+              const SizedBox(height: 8),
+              // Customer Name and Total Price
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    order.customerName ?? 'N/A',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    NumberFormat.currency(symbol: '\$').format(order.totalPrice),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ],
           ),
@@ -58,39 +95,16 @@ class OrderItemWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color color;
+  Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        color = Colors.orange;
-        break;
-      case 'processing':
-        color = Colors.blue;
-        break;
-      case 'shipped':
-        color = Colors.green;
-        break;
-      case 'delivered':
-        color = Colors.purple;
-        break;
-      case 'cancelled':
-        color = Colors.red;
-        break;
+        return Colors.orange;
+      case 'on the way':
+        return Colors.blue;
+      case 'completed':
+        return Colors.green;
       default:
-        color = Colors.grey;
+        return Colors.grey;
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(color: color, fontSize: 12),
-      ),
-    );
   }
 }

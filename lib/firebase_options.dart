@@ -62,26 +62,26 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC9NZdGK7BOk7lDNZKiMCtwGfknoc8HB6g',
-    appId: '1:856962758049:ios:f3bf7d3a6d6d6c522c47e0',
+    appId: '1:856962758049:ios:3d59665f213348b02c47e0',
     messagingSenderId: '856962758049',
     projectId: 'vipnni-bb870',
     databaseURL: 'https://vipnni-bb870-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'vipnni-bb870.appspot.com',
     androidClientId: '856962758049-djgrtqksrtc2bf58c8h1m3viitfvbmh1.apps.googleusercontent.com',
-    iosClientId: '856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com',
-    iosBundleId: 'com.example.vipnni',
+    iosClientId: '856962758049-l11e8hidikk9cobc9iiccqf5c9vkk778.apps.googleusercontent.com',
+    iosBundleId: 'com.example.vippni',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC9NZdGK7BOk7lDNZKiMCtwGfknoc8HB6g',
-    appId: '1:856962758049:ios:f3bf7d3a6d6d6c522c47e0',
+    appId: '1:856962758049:ios:3d59665f213348b02c47e0',
     messagingSenderId: '856962758049',
     projectId: 'vipnni-bb870',
     databaseURL: 'https://vipnni-bb870-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'vipnni-bb870.appspot.com',
     androidClientId: '856962758049-djgrtqksrtc2bf58c8h1m3viitfvbmh1.apps.googleusercontent.com',
-    iosClientId: '856962758049-jlj20e81rf1jo3duhrjqhk7d8oanbspf.apps.googleusercontent.com',
-    iosBundleId: 'com.example.vipnni',
+    iosClientId: '856962758049-l11e8hidikk9cobc9iiccqf5c9vkk778.apps.googleusercontent.com',
+    iosBundleId: 'com.example.vippni',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

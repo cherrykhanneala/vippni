@@ -19,6 +19,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'theme.dart'; // <-- Add this import
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -135,24 +136,8 @@ class _MyAppState extends State<MyApp> {
         Locale('en'), // English
         // Add other locales as needed
       ],
-      theme: ThemeData(
-        primaryColor: const Color(0xFF31135F),
-        hintColor: const Color(0xFFFFB23D),
-        scaffoldBackgroundColor: const Color(0xFFD6F7FA),
-        buttonTheme: const ButtonThemeData(
-          buttonColor: Color(0xFF4ABDFF),
-        ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            fontSize: 32.0,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF6B29D1),
-          ),
-          bodyLarge: TextStyle(
-            color: Color(0xFF31135F),
-          ),
-        ),
-      ),
+      theme: AppTheme.light, // <-- Use your custom theme
+      darkTheme: AppTheme.dark, // <-- Use your custom dark theme
       home: const AuthWrapper(),
       routes: {
         '/home': (context) => const HomeScreen(),

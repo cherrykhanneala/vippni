@@ -419,7 +419,7 @@ class OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 // Loading Indicator
                 if (_isUpdating)
                   Container(
-                    color: Colors.black.withValues(alpha:0.5),
+                    color: Colors.black.withOpacity(0.5),
                     child: const Center(
                       child: CircularProgressIndicator(),
                     ),

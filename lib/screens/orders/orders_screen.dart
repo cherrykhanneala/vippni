@@ -4,8 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../widgets/order_item_widget.dart'; // Ensure this path is correct
 import 'orders_menu.dart'; // Ensure this path is correct
 import '../../models/order_model.dart';
-import 'order_details_screen.dart';
-import 'edit_order_screen.dart';
+
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -59,7 +58,9 @@ class OrdersScreenState extends State<OrdersScreen>
       // Handle the case when the user is not logged in
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Orders'),
+          elevation: 0,
+          title: const Text('Orders', style: TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF31135F),
         ),
         body: const Center(
           child: Text('Please log in to view your orders.'),
@@ -69,8 +70,10 @@ class OrdersScreenState extends State<OrdersScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Orders', style: TextStyle(color: Colors.white)),
+        title: const Text('Orders',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF31135F),
+        elevation: 2,
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu, color: Colors.white),
@@ -81,12 +84,15 @@ class OrdersScreenState extends State<OrdersScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
           tabs: const [
             Tab(text: 'Pending'),
-            Tab(text: 'On the Way'),
+            Tab(text: 'Processing'),
             Tab(text: 'Completed'),
           ],
-          labelColor: Colors.white,
+          labelStyle:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
       drawer: const OrdersMenu(),
@@ -96,7 +102,7 @@ class OrdersScreenState extends State<OrdersScreen>
               controller: _tabController,
               children: [
                 _buildOrdersList('Pending'),
-                _buildOrdersList('On the Way'),
+                _buildOrdersList('Processing'),
                 _buildOrdersList('Completed'),
               ],
             ),
@@ -104,88 +110,78 @@ class OrdersScreenState extends State<OrdersScreen>
   }
 
   Widget _buildOrdersList(String statusFilter) {
+    String firestoreStatus;
+    switch (statusFilter) {
+      case 'Processing':
+        firestoreStatus = 'on the way';
+        break;
+      case 'Completed':
+        firestoreStatus = 'Completed';
+        break;
+      case 'Pending':
+      default:
+        firestoreStatus = 'Pending';
+        break;
+    }
+
     final filteredOrders = _cachedOrders.where((order) {
-      final List<dynamic> items = order['items'];
+      final List<dynamic> items = order['items'] ?? [];
+      // Check for items that belong to this vendor AND match the status
       final vendorItems = items.where((item) =>
-          item['vendorId'] == _vendorId && item['status'] == statusFilter).toList();
+          item['vendorId'] == _vendorId &&
+          (item['status'] ?? 'Pending') == firestoreStatus).toList();
       return vendorItems.isNotEmpty;
     }).toList();
 
-    return filteredOrders.isEmpty
-        ? const Center(child: Text('No orders found.'))
-        : ListView.builder(
-            itemCount: filteredOrders.length,
-            itemBuilder: (context, index) {
-              final order = filteredOrders[index];
-              final List<dynamic> items = order['items'];
-              final vendorItems = items.where((item) {
-                return item['vendorId'] == _vendorId &&
-                    item['status'] == statusFilter;
-              }).toList();
+    if (filteredOrders.isEmpty) {
+      return Center(
+          child: Text('No $statusFilter orders found',
+              style: const TextStyle(fontSize: 16)));
+    }
 
-              return OrderItemWidget(
-                order: OrderModel(
-                  id: order.id,
-                  customerId: order['userId'] ?? '',
-                  date: (order['orderDate'] as Timestamp).toDate(),
-                  total: (order['totalPrice'] ?? 0).toDouble(),
-                  status: statusFilter,
-                  items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                  // The following fields are not present in your Firestore, so set as null
-                  customerName: null,
-                  customerEmail: null,
-                  customerPhone: null,
-                  shipping: null,
-                  payment: null,
+    return ListView.separated(
+      padding: const EdgeInsets.all(12),
+      itemCount: filteredOrders.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final order = filteredOrders[index];
+        return FutureBuilder<OrderModel>(
+          future: OrderModel.fromFirestoreWithCustomer(order),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: Text('Loading...')),
                 ),
-                onView: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => OrderDetailsScreen(
-                        order: OrderModel(
-                          id: order.id,
-                          customerId: order['userId'] ?? '',
-                          date: (order['orderDate'] as Timestamp).toDate(),
-                          total: (order['totalPrice'] ?? 0).toDouble(),
-                          status: statusFilter,
-                          items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                          customerName: null,
-                          customerEmail: null,
-                          customerPhone: null,
-                          shipping: null,
-                          payment: null,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                onEdit: () async {
-                  final updated = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => EditOrderScreen(
-                        order: OrderModel(
-                          id: order.id,
-                          customerId: order['userId'] ?? '',
-                          date: (order['orderDate'] as Timestamp).toDate(),
-                          total: (order['totalPrice'] ?? 0).toDouble(),
-                          status: statusFilter,
-                          items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                          customerName: null,
-                          customerEmail: null,
-                          customerPhone: null,
-                          shipping: null,
-                          payment: null,
-                        ),
-                      ),
-                    ),
-                  );
-                  if (updated == true) {
-                    _fetchOrders();
-                  }
-                },
               );
-            },
-          );
+            }
+
+            if (snapshot.hasError) {
+              return Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                      child: Text('Error loading order: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.red))),
+                ),
+              );
+            }
+
+            final orderModel = snapshot.data!;
+            return OrderItemWidget(
+              order: orderModel, // Pass only the order
+            );
+          },
+        );
+      },
+    );
   }
 
   @override

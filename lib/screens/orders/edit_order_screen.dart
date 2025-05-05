@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import '../../models/order_model.dart';
 
 class EditOrderScreen extends StatefulWidget {
@@ -38,14 +40,34 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
     });
 
     try {
-      await FirebaseFirestore.instance
+      // Get the current vendor's items
+      final currentVendorId = FirebaseAuth.instance.currentUser?.uid;
+      final orderRef = FirebaseFirestore.instance
           .collection('orders')
-          .doc(widget.order.id)
-          .update({
-        'status': _status,
-        'shipping': _shippingController.text,
-        'payment': _paymentController.text,
+          .doc(widget.order.id);
+      
+      // Get the current order data
+      final orderDoc = await orderRef.get();
+      final data = orderDoc.data() as Map<String, dynamic>;
+      final List<dynamic> items = List.from(data['items'] ?? []);
+
+      // Update status for all items belonging to current vendor
+      for (int i = 0; i < items.length; i++) {
+        if (items[i]['vendorId'] == currentVendorId) {
+          items[i]['status'] = _status;
+        }
+      }
+
+      // Update the order document
+      await orderRef.update({
+        'items': items,
+        'shipping': _shippingController.text.isNotEmpty ? 
+          jsonDecode(_shippingController.text) : null,
+        'payment': _paymentController.text.isNotEmpty ? 
+          jsonDecode(_paymentController.text) : null,
+        'lastUpdated': FieldValue.serverTimestamp(),
       });
+
       if (mounted) {
         Navigator.of(context).pop(true);
       }
@@ -53,9 +75,11 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
       setState(() {
         _isSaving = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update order: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update order: $e')),
+        );
+      }
     }
   }
 
@@ -76,7 +100,7 @@ class _EditOrderScreenState extends State<EditOrderScreen> {
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: const [
                       DropdownMenuItem(value: 'Pending', child: Text('Pending')),
-                      DropdownMenuItem(value: 'On the Way', child: Text('On the Way')),
+                      DropdownMenuItem(value: 'on the Way', child: Text('Processing')),
                       DropdownMenuItem(value: 'Completed', child: Text('Completed')),
                     ],
                     onChanged: (value) {

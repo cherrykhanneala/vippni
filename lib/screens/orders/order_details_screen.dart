@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../models/order_model.dart';
-import '../../analytics/analytics_service.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final OrderModel order;
-
+  
   const OrderDetailsScreen({
-    super.key,
+    super.key, 
     required this.order,
   });
 
@@ -17,275 +16,630 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  final AnalyticsService _analytics = AnalyticsService();
-  final bool _isLoading = false;
+  bool _isLoading = true;
+  bool _hasUnsavedChanges = false; // Track unsaved changes
+  Map<String, dynamic>? _userData;
+  Map<String, List<Map<String, dynamic>>> _productsData = {};
+  final Set<String> _selectedProductIds = {}; // Track selected product IDs
 
   @override
   void initState() {
     super.initState();
-    _analytics.logScreenView('order_details_screen');
+    _fetchRelatedData();
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    switch (status.toLowerCase()) {
-      case 'pending':
-        color = Colors.orange;
-        break;
-      case 'processing':
-        color = Colors.blue;
-        break;
-      case 'shipped':
-        color = Colors.green;
-        break;
-      case 'delivered':
-        color = Colors.purple;
-        break;
-      case 'cancelled':
-        color = Colors.red;
-        break;
-      default:
-        color = Colors.grey;
+  Future<void> _fetchRelatedData() async {
+    try {
+      // Fetch user data
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.order.customerId)
+          .get();
+      
+      // Fetch products data
+      final productIds = widget.order.items.map((item) => item.productId).toList();
+      final productsData = await Future.wait(
+        productIds.map((id) => FirebaseFirestore.instance
+            .collection('products')
+            .doc(id)
+            .get())
+      );
+
+      if (mounted) {
+        setState(() {
+          _userData = userDoc.data();
+          _productsData = Map.fromIterables(
+            productIds,
+            productsData.map((doc) => [doc.data() ?? {}]),
+          );
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error loading order details')),
+        );
+        setState(() => _isLoading = false);
+      }
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Color.fromRGBO(color.red, color.green, color.blue, 0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(color: color),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
-    final order = widget.order;
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Order #${order.id}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/edit-order',
-                arguments: order,
-              );
-            },
+    return WillPopScope(
+      onWillPop: _onWillPop, // Intercept back navigation
+      child: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('Order #${widget.order.orderNumber}'),
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Order Details'),
+                Tab(text: 'Parcel Details'),
+              ],
+            ),
           ),
+          body: _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                children: [
+                  _buildOrderDetailsTab(),
+                  _buildParcelDetailsTab(),
+                ],
+              ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_hasUnsavedChanges) {
+      final shouldLeave = await _showUnsavedChangesDialog();
+      return shouldLeave ?? false; // Allow navigation if user confirms
+    }
+    return true; // Allow navigation if no unsaved changes
+  }
+
+  Future<bool?> _showUnsavedChangesDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Unsaved Changes'),
+          content: _hasTrackingNumberEntered()
+              ? const Text(
+                  'You have entered a tracking number. Do you want to update the order status to "On the Way"?')
+              : const Text(
+                  'You have unsaved changes. Do you want to save them before leaving?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Discard changes
+              child: const Text('Discard'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (_hasTrackingNumberEntered()) {
+                  _updateOrderStatusToOnTheWay(); // Update status to "On the Way"
+                }
+                await _saveChanges(); // Save changes
+                Navigator.of(context).pop(true); // Allow navigation
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildOrderDetailsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildOrderOverview(),
+          const Divider(height: 32),
+          _buildCustomerDetails(),
+          const Divider(height: 32),
+          _buildOrderItems(),
+          const Divider(height: 32),
+          _buildPricingSummary(),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
+    );
+  }
+
+  Widget _buildOrderOverview() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order Overview',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow('Order Number:', '#${widget.order.orderNumber}'),
+            _buildInfoRow(
+              'Order Date:', 
+              DateFormat('MMM dd, yyyy - hh:mm a')
+                .format(widget.order.date),
+            ),
+            _buildInfoRow('Total Items:', '${widget.order.items.length}'),
+            _buildInfoRow(
+              'Total Amount:', 
+              NumberFormat.currency(symbol: '\$').format(widget.order.totalPrice),
+            ),
+            _buildInfoRow(
+              'Payment Method:', 
+              widget.order.payment?['method'] ?? 'N/A',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerDetails() {
+    return SizedBox(
+      width: double.infinity, // Ensure the card takes the full width
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Customer Details',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow('Name:', _userData?['fullName'] ?? 'N/A'),
+              _buildInfoRow('Email:', _userData?['email'] ?? 'N/A'),
+              if (_userData?['address'] != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Address:',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildInfoRow('Line 1:', _userData!['address']['line1'] ?? ''),
+                _buildInfoRow('Line 2:', _userData!['address']['line2'] ?? ''),
+                _buildInfoRow(
+                  'City & Postcode:',
+                  '${_userData!['address']['city'] ?? ''}, ${_userData!['address']['postCode'] ?? ''}',
+                ),
+                _buildInfoRow('Country:', _userData!['address']['country'] ?? ''),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderItems() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Order Items',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ...widget.order.items.map((item) {
+              final productData = _productsData[item.productId]?.first;
+              return ListTile(
+                leading: productData?['images'] != null 
+                  ? Image.network(
+                      productData!['images'][0],
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                    )
+                  : const Icon(Icons.image_not_supported),
+                title: Text(item.name),
+                subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              localizations.status,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            _buildStatusBadge(order.status),
-                          ],
-                        ),
-                      ),
+                    Text('Quantity: ${item.quantity}'),
+                    Text('Status: ${item.status}'),
+                  ],
+                ),
+                trailing: Text(
+                  NumberFormat.currency(symbol: '\$').format(item.price),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPricingSummary() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Price Details',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+              'Subtotal:', 
+              NumberFormat.currency(symbol: '\$').format(widget.order.totalPrice),
+            ),
+            if (widget.order.payment != null) ...[
+              _buildInfoRow(
+                'Shipping:', 
+                NumberFormat.currency(symbol: '\$')
+                  .format(widget.order.payment?['deliveryCharge'] ?? 0),
+              ),
+              _buildInfoRow(
+                'Discount:', 
+                NumberFormat.currency(symbol: '\$')
+                  .format(widget.order.payment?['discount'] ?? 0),
+              ),
+            ],
+            const Divider(),
+            _buildInfoRow(
+              'Total:', 
+              NumberFormat.currency(symbol: '\$').format(widget.order.totalPrice),
+              isBold: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParcelDetailsTab() {
+    final items = widget.order.items;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Customer Details
+          Text(
+            'Customer Details',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow('Full Name:', _userData?['fullName'] ?? 'N/A'),
+          const SizedBox(height: 8),
+          Text(
+            'Address:',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _formatFullAddress(_userData?['address']),
+            style: const TextStyle(fontSize: 16),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Divider(height: 32),
+
+          // Parcel Details
+          Text(
+            'Parcel Details',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+
+          // Common Fields for Selected Items
+          if (_selectedProductIds.isNotEmpty) _buildCommonFields(),
+
+          // Display individual product cards with checkboxes and expandable fields
+          ...items.map((item) {
+            final productData = _productsData[item.productId]?.first;
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ExpansionTile(
+                title: Row(
+                  children: [
+                    Checkbox(
+                      value: _selectedProductIds.contains(item.productId),
+                      onChanged: (isSelected) {
+                        setState(() {
+                          if (isSelected == true) {
+                            _selectedProductIds.add(item.productId);
+                          } else {
+                            _selectedProductIds.remove(item.productId);
+                          }
+                        });
+                      },
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Customer Information Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Customer Information',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow('Customer ID', order.customerId),
-                            _buildInfoRow('Name', order.customerName ?? 'N/A'),
-                            _buildInfoRow('Email', order.customerEmail ?? 'N/A'),
-                            _buildInfoRow('Phone', order.customerPhone ?? 'N/A'),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Order Details Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Order Details',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow(
-                              'Order Date',
-                              DateFormat.yMMMd().format(order.date),
-                            ),
-                            _buildInfoRow(
-                              'Total',
-                              currencyFormat.format(order.total),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Items Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Items',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: order.items.length,
-                              itemBuilder: (context, index) {
-                                final item = order.items[index];
-                                return ListTile(
-                                  title: Text(item.productName),
-                                  subtitle: Text('${item.quantity}x @ ${currencyFormat.format(item.price)}'),
-                                  trailing: Text(currencyFormat.format(item.price * item.quantity)),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Shipping Information Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Shipping Information',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow('Name', order.shipping?.name ?? 'N/A'),
-                            _buildInfoRow('Address', order.shipping?.address ?? 'N/A'),
-                            _buildInfoRow('City', order.shipping?.city ?? 'N/A'),
-                            _buildInfoRow('State', order.shipping?.state ?? 'N/A'),
-                            _buildInfoRow('Postal Code', order.shipping?.postalCode ?? 'N/A'),
-                            _buildInfoRow('Country', order.shipping?.country ?? 'N/A'),
-                            if (order.shipping?.trackingNumber != null)
-                              _buildInfoRow('Tracking', order.shipping!.trackingNumber!),
-                            if (order.shipping?.carrier != null)
-                              _buildInfoRow('Carrier', order.shipping!.carrier!),
-                            if (order.shipping?.shippedDate != null)
-                              _buildInfoRow(
-                                'Shipped Date',
-                                DateFormat.yMMMd().format(order.shipping!.shippedDate!),
-                              ),
-                            if (order.shipping?.estimatedDelivery != null)
-                              _buildInfoRow(
-                                'Estimated Delivery',
-                                DateFormat.yMMMd().format(order.shipping!.estimatedDelivery!),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Payment Information Card
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Payment Information',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoRow('Method', order.payment?.method ?? 'N/A'),
-                            _buildInfoRow('Status', order.payment?.status ?? 'N/A'),
-                            if (order.payment?.transactionId != null)
-                              _buildInfoRow('Transaction ID', order.payment!.transactionId!),
-                            if (order.payment?.paidAt != null)
-                              _buildInfoRow(
-                                'Paid At',
-                                DateFormat.yMMMd().format(order.payment!.paidAt!),
-                              ),
-                          ],
-                        ),
+                    Expanded(
+                      child: Text(
+                        'Product: ${item.name}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
+                subtitle: Text('Quantity: ${item.quantity}'),
+                leading: productData?['images'] != null
+                    ? Image.network(
+                        productData!['images'][0],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      )
+                    : const Icon(Icons.image_not_supported),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildEditableField(
+                          label: 'Number of Items',
+                          initialValue: item.quantity.toString(),
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'quantity', int.tryParse(value) ?? item.quantity);
+                          },
+                        ),
+                        _buildEditableField(
+                          label: 'Shipping Cost',
+                          initialValue: item.shippingCost ?? '',
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'shippingCost', value);
+                          },
+                        ),
+                        _buildEditableField(
+                          label: 'Tracking Number',
+                          initialValue: item.trackingNumber ?? '',
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'trackingNumber', value);
+                          },
+                        ),
+                        _buildEditableField(
+                          label: 'Parcel Size (Cubic mm)',
+                          initialValue: item.metadata?['cubicMm']?.toString() ?? '',
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'metadata.cubicMm', value);
+                          },
+                        ),
+                        _buildEditableField(
+                          label: 'Parcel Weight (grams)',
+                          initialValue: item.metadata?['weight']?.toString() ?? '',
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'metadata.weight', value);
+                          },
+                        ),
+                        _buildDropdownField(
+                          label: 'Status',
+                          value: item.status,
+                          items: const ['Pending', 'On the Way', 'Completed'],
+                          onChanged: (value) {
+                            _updateOrderItemField(item, 'status', value);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+
+          // Save Button
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _saveChanges,
+              child: const Text('Save Changes'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommonFields() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Common Fields for Selected Products',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            _buildEditableField(
+              label: 'Shipping Cost',
+              initialValue: '',
+              onChanged: (value) {
+                for (final productId in _selectedProductIds) {
+                  final item = widget.order.items.firstWhere((item) => item.productId == productId);
+                  _updateOrderItemField(item, 'shippingCost', value);
+                }
+              },
+            ),
+            _buildEditableField(
+              label: 'Tracking Number',
+              initialValue: '',
+              onChanged: (value) {
+                for (final productId in _selectedProductIds) {
+                  final item = widget.order.items.firstWhere((item) => item.productId == productId);
+                  _updateOrderItemField(item, 'trackingNumber', value);
+                }
+              },
+            ),
+            _buildEditableField(
+              label: 'Weight (grams)',
+              initialValue: '',
+              onChanged: (value) {
+                for (final productId in _selectedProductIds) {
+                  final item = widget.order.items.firstWhere((item) => item.productId == productId);
+                  _updateOrderItemField(item, 'weight', double.tryParse(value) ?? 0);
+                }
+              },
+            ),
+            _buildEditableField(
+              label: 'Size (Cubic mm)',
+              initialValue: '',
+              onChanged: (value) {
+                for (final productId in _selectedProductIds) {
+                  final item = widget.order.items.firstWhere((item) => item.productId == productId);
+                  _updateOrderItemField(item, 'size', value);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatFullAddress(Map<String, dynamic>? address) {
+    if (address == null) return 'N/A';
+    return '${address['line1'] ?? ''}, ${address['line2'] ?? ''}, ${address['city'] ?? ''}, ${address['postCode'] ?? ''}, ${address['country'] ?? ''}';
+  }
+
+  Widget _buildEditableField({
+    required String label,
+    required String initialValue,
+    required Function(String) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: initialValue,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+          onChanged: onChanged,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: items.contains(value) ? value : null, // Ensure value is valid
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+          items: items
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Text(item),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Future<void> _updateOrderItemField(OrderItem item, String field, dynamic value) async {
+    setState(() {
+      final index = widget.order.items.indexWhere((i) => i.productId == item.productId);
+      if (index != -1) {
+        final updatedItem = widget.order.items[index].toMap();
+        updatedItem[field] = value;
+        widget.order.items[index] = OrderItem.fromMap(updatedItem);
+
+        // Mark as having unsaved changes
+        _hasUnsavedChanges = true;
+      }
+    });
+  }
+
+  Future<void> _saveChanges() async {
+    try {
+      // Convert all items to a list of maps for Firestore
+      final List<Map<String, dynamic>> updatedItems = widget.order.items.map((item) => item.toMap()).toList();
+
+      // Update the Firestore document
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.order.id)
+          .update({'items': updatedItems});
+
+      setState(() {
+        _hasUnsavedChanges = false; // Reset unsaved changes flag
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Changes saved successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save changes')),
+      );
+    }
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               ),
             ),
+          ),
+        ],
+      ),
     );
+  }
+
+  bool _hasTrackingNumberEntered() {
+    return widget.order.items.any((item) => 
+        item.trackingNumber != null && item.trackingNumber!.isNotEmpty);
+  }
+
+  void _updateOrderStatusToOnTheWay() {
+    setState(() {
+      for (final item in widget.order.items) {
+        if (item.trackingNumber != null && item.trackingNumber!.isNotEmpty) {
+          _updateOrderItemField(item, 'status', 'On the Way');
+        }
+      }
+    });
   }
 }

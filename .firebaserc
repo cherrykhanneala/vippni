@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "vipnni-bb870"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }
