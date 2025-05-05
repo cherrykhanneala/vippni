@@ -106,11 +106,8 @@ class OrdersScreenState extends State<OrdersScreen>
   Widget _buildOrdersList(String statusFilter) {
     final filteredOrders = _cachedOrders.where((order) {
       final List<dynamic> items = order['items'];
-      final vendorItems = items
-          .where((item) =>
-              item['vendorId'] == _vendorId && item['status'] == statusFilter)
-          .map<OrderItem>((item) => OrderItem.fromMap(item))
-          .toList();
+      final vendorItems = items.where((item) =>
+          item['vendorId'] == _vendorId && item['status'] == statusFilter).toList();
       return vendorItems.isNotEmpty;
     }).toList();
 
@@ -128,34 +125,35 @@ class OrdersScreenState extends State<OrdersScreen>
 
               return OrderItemWidget(
                 order: OrderModel(
-                  id: order['id'],
-                  customerId: order['customerId'],
-                  customerName: order['customerName'],
-                  customerEmail: order['customerEmail'],
-                  customerPhone: order['customerPhone'],
+                  id: order.id,
+                  customerId: order['userId'] ?? '',
                   date: (order['orderDate'] as Timestamp).toDate(),
-                  total: order['total'],
+                  total: (order['totalPrice'] ?? 0).toDouble(),
                   status: statusFilter,
                   items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                  shipping: order['shipping'],
-                  payment: order['payment'],
+                  // The following fields are not present in your Firestore, so set as null
+                  customerName: null,
+                  customerEmail: null,
+                  customerPhone: null,
+                  shipping: null,
+                  payment: null,
                 ),
                 onView: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => OrderDetailsScreen(
                         order: OrderModel(
-                          id: order['id'],
-                          customerId: order['customerId'],
-                          customerName: order['customerName'],
-                          customerEmail: order['customerEmail'],
-                          customerPhone: order['customerPhone'],
+                          id: order.id,
+                          customerId: order['userId'] ?? '',
                           date: (order['orderDate'] as Timestamp).toDate(),
-                          total: order['total'],
+                          total: (order['totalPrice'] ?? 0).toDouble(),
                           status: statusFilter,
                           items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                          shipping: order['shipping'],
-                          payment: order['payment'],
+                          customerName: null,
+                          customerEmail: null,
+                          customerPhone: null,
+                          shipping: null,
+                          payment: null,
                         ),
                       ),
                     ),
@@ -166,17 +164,17 @@ class OrdersScreenState extends State<OrdersScreen>
                     MaterialPageRoute(
                       builder: (context) => EditOrderScreen(
                         order: OrderModel(
-                          id: order['id'],
-                          customerId: order['customerId'],
-                          customerName: order['customerName'],
-                          customerEmail: order['customerEmail'],
-                          customerPhone: order['customerPhone'],
+                          id: order.id,
+                          customerId: order['userId'] ?? '',
                           date: (order['orderDate'] as Timestamp).toDate(),
-                          total: order['total'],
+                          total: (order['totalPrice'] ?? 0).toDouble(),
                           status: statusFilter,
                           items: vendorItems.map<OrderItem>((item) => OrderItem.fromMap(item)).toList(),
-                          shipping: order['shipping'],
-                          payment: order['payment'],
+                          customerName: null,
+                          customerEmail: null,
+                          customerPhone: null,
+                          shipping: null,
+                          payment: null,
                         ),
                       ),
                     ),

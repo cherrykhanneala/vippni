@@ -34,7 +34,7 @@ class OrderItemWidget extends StatelessWidget {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(order.customerName),
+              Text(order.customerName ?? ''),
               Text(
                 '${DateFormat.yMMMd().format(order.date)} - ${currencyFormat.format(order.total)}',
               ),

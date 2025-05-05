@@ -94,8 +94,8 @@ class OrderService {
         return OrderQueryResult(
           orders: orders.where((order) {
             return order.id.toLowerCase().contains(lowerQuery) ||
-                   order.customerName.toLowerCase().contains(lowerQuery) ||
-                   order.customerEmail.toLowerCase().contains(lowerQuery);
+                   (order.customerName?.toLowerCase() ?? '').contains(lowerQuery) ||
+                   (order.customerEmail?.toLowerCase() ?? '').contains(lowerQuery);
           }).toList(),
           lastDocument: snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
           hasMore: snapshot.docs.length >= limit,

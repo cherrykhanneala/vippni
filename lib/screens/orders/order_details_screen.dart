@@ -51,7 +51,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: Color.fromRGBO(color.red, color.green, color.blue, 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color),
       ),
@@ -149,9 +149,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             ),
                             const SizedBox(height: 16),
                             _buildInfoRow('Customer ID', order.customerId),
-                            _buildInfoRow('Name', order.customerName),
-                            _buildInfoRow('Email', order.customerEmail),
-                            _buildInfoRow('Phone', order.customerPhone),
+                            _buildInfoRow('Name', order.customerName ?? 'N/A'),
+                            _buildInfoRow('Email', order.customerEmail ?? 'N/A'),
+                            _buildInfoRow('Phone', order.customerPhone ?? 'N/A'),
                           ],
                         ),
                       ),
@@ -205,17 +205,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               itemBuilder: (context, index) {
                                 final item = order.items[index];
                                 return ListTile(
-                                  leading: item.imageUrl != null
-                                      ? Image.network(
-                                          item.imageUrl!,
-                                          width: 50,
-                                          height: 50,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
                                   title: Text(item.productName),
                                   subtitle: Text('${item.quantity}x @ ${currencyFormat.format(item.price)}'),
-                                  trailing: Text(currencyFormat.format(item.total)),
+                                  trailing: Text(currencyFormat.format(item.price * item.quantity)),
                                 );
                               },
                             ),
@@ -238,25 +230,25 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 16),
-                            _buildInfoRow('Name', order.shipping.name),
-                            _buildInfoRow('Address', order.shipping.address),
-                            _buildInfoRow('City', order.shipping.city),
-                            _buildInfoRow('State', order.shipping.state),
-                            _buildInfoRow('Postal Code', order.shipping.postalCode),
-                            _buildInfoRow('Country', order.shipping.country),
-                            if (order.shipping.trackingNumber != null)
-                              _buildInfoRow('Tracking', order.shipping.trackingNumber!),
-                            if (order.shipping.carrier != null)
-                              _buildInfoRow('Carrier', order.shipping.carrier!),
-                            if (order.shipping.shippedDate != null)
+                            _buildInfoRow('Name', order.shipping?.name ?? 'N/A'),
+                            _buildInfoRow('Address', order.shipping?.address ?? 'N/A'),
+                            _buildInfoRow('City', order.shipping?.city ?? 'N/A'),
+                            _buildInfoRow('State', order.shipping?.state ?? 'N/A'),
+                            _buildInfoRow('Postal Code', order.shipping?.postalCode ?? 'N/A'),
+                            _buildInfoRow('Country', order.shipping?.country ?? 'N/A'),
+                            if (order.shipping?.trackingNumber != null)
+                              _buildInfoRow('Tracking', order.shipping!.trackingNumber!),
+                            if (order.shipping?.carrier != null)
+                              _buildInfoRow('Carrier', order.shipping!.carrier!),
+                            if (order.shipping?.shippedDate != null)
                               _buildInfoRow(
                                 'Shipped Date',
-                                DateFormat.yMMMd().format(order.shipping.shippedDate!),
+                                DateFormat.yMMMd().format(order.shipping!.shippedDate!),
                               ),
-                            if (order.shipping.estimatedDelivery != null)
+                            if (order.shipping?.estimatedDelivery != null)
                               _buildInfoRow(
                                 'Estimated Delivery',
-                                DateFormat.yMMMd().format(order.shipping.estimatedDelivery!),
+                                DateFormat.yMMMd().format(order.shipping!.estimatedDelivery!),
                               ),
                           ],
                         ),
@@ -277,14 +269,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 16),
-                            _buildInfoRow('Method', order.payment.method),
-                            _buildInfoRow('Status', order.payment.status),
-                            if (order.payment.transactionId != null)
-                              _buildInfoRow('Transaction ID', order.payment.transactionId!),
-                            if (order.payment.paidAt != null)
+                            _buildInfoRow('Method', order.payment?.method ?? 'N/A'),
+                            _buildInfoRow('Status', order.payment?.status ?? 'N/A'),
+                            if (order.payment?.transactionId != null)
+                              _buildInfoRow('Transaction ID', order.payment!.transactionId!),
+                            if (order.payment?.paidAt != null)
                               _buildInfoRow(
                                 'Paid At',
-                                DateFormat.yMMMd().format(order.payment.paidAt!),
+                                DateFormat.yMMMd().format(order.payment!.paidAt!),
                               ),
                           ],
                         ),
