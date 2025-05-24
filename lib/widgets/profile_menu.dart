@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../screens/profile_menu/change_language_screen.dart';
-import '../screens/profile_menu/terms_conditions_screen.dart';
-import '../screens/profile_menu/privacy_policy_screen.dart';
+import '../screens/profile_menu/terms_and_conditions.dart';
+import '../screens/profile_menu/privacy_policy.dart';
 import '../screens/profile_menu/contact_us_screen.dart';
 import '../screens/profile_menu/return_policy_screen.dart';
 import '../screens/profile_menu/shipping_policy_screen.dart';
@@ -49,7 +49,7 @@ class ProfileMenu extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const TermsConditionsScreen()),
+                    builder: (context) => const TermsAndConditions()),
               );
             },
           ),
@@ -61,7 +61,7 @@ class ProfileMenu extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const PrivacyPolicyScreen()),
+                    builder: (context) => const PrivacyPolicy()),
               );
             },
           ),

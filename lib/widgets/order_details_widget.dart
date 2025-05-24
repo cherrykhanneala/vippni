@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // Import the intl package for date formatting
-import '../screens/products/product_display.dart';
+import '../features/products/product_display.dart';
 
 class OrderDetailsWidget extends StatefulWidget {
   final DocumentSnapshot order;
@@ -23,6 +23,8 @@ class OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   String? _productImageUrl;
   String? _trackingNumber;
   String? _shippingCost; // Optional shipping cost
+  String? _weight; // Optional weight
+  String? _size; // Optional size
   bool _isLoading = true;
   bool _isUpdating = false;
   Map<String, dynamic>? _userData;
@@ -120,7 +122,6 @@ class OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
   Future<void> _updateOrderStatus() async {
     if (_formKey.currentState != null && !_formKey.currentState!.validate()) {
-      // Form is not valid, do not proceed
       return;
     }
 
@@ -137,6 +138,12 @@ class OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           }
           if (_shippingCost != null && _shippingCost!.isNotEmpty) {
             item['shippingCost'] = _shippingCost;
+          }
+          if (_weight != null) {
+            item['weight'] = double.tryParse(_weight!) ?? 0;
+          }
+          if (_size != null) {
+            item['size'] = _size;
           }
           break;
         }
@@ -377,6 +384,29 @@ class OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                               return 'Tracking number is required when status is "On the Way"';
                             }
                             return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        // Weight Input
+                        TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'Enter Weight (Optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            _weight = value;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        // Size Input
+                        TextFormField(
+                          decoration: const InputDecoration(
+                            labelText: 'Enter Size (Optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          onChanged: (value) {
+                            _size = value;
                           },
                         ),
                         const SizedBox(height: 20),

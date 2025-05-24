@@ -113,11 +113,17 @@ class OrderProvider with ChangeNotifier {
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     try {
       await _orderService.updateOrderStatus(orderId, newStatus);
-      
-      // Update local order
+
       final index = _orders.indexWhere((order) => order.id == orderId);
       if (index != -1) {
-        _orders[index] = _orders[index].copyWith(status: newStatus);
+        final updatedItems = _orders[index].items.map((item) {
+          if (item.status == 'Pending') {
+            return item.copyWith(status: newStatus);
+          }
+          return item;
+        }).toList().cast<OrderItem>();
+
+        _orders[index] = _orders[index].copyWith(items: updatedItems);
         notifyListeners();
       }
     } catch (e) {

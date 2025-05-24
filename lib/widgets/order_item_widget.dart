@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/order_model.dart';
-import '../screens/orders/order_details_screen.dart';
+import '../features/orders/order_details_screen.dart';
 
 class OrderItemWidget extends StatelessWidget {
   final OrderModel order;

@@ -12,21 +12,18 @@ import 'package:flutter/widgets.dart';
 class $LibGen {
   const $LibGen();
 
-  /// Directory path: lib/110n
-  $Lib110nGen get a110n => const $Lib110nGen();
+  /// Directory path: lib/l10n
+  $LibL10nGen get l10n => const $LibL10nGen();
 }
 
-class $Lib110nGen {
-  const $Lib110nGen();
+class $LibL10nGen {
+  const $LibL10nGen();
 
-  /// File path: lib/110n/app_en.arb
-  String get appEn => 'lib/110n/app_en.arb';
-
-  /// File path: lib/110n/app_es.arb
-  String get appEs => 'lib/110n/app_es.arb';
+  /// File path: lib/l10n/app_en.arb
+  String get appEn => 'lib/l10n/app_en.arb';
 
   /// List of all assets
-  List<String> get values => [appEn, appEs];
+  List<String> get values => [appEn];
 }
 
 class Assets {

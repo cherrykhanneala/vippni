@@ -186,7 +186,6 @@ class OrderItem {
   final double? weight; // Direct field for weight
   final String? size; // Direct field for size
   final String? shippingCost;
-  final Map<String, dynamic>? metadata; // Add metadata field
 
   OrderItem({
     required this.productId,
@@ -199,7 +198,6 @@ class OrderItem {
     this.weight,
     this.size,
     this.shippingCost,
-    this.metadata, // Initialize metadata
   });
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
@@ -211,10 +209,13 @@ class OrderItem {
       status: map['status'] ?? 'Pending',
       vendorId: map['vendorId'] ?? '',
       trackingNumber: map['trackingNumber'],
-      weight: (map['weight'] ?? 0).toDouble(),
+      weight: map['weight'] != null
+          ? (map['weight'] is String
+              ? double.tryParse(map['weight']) ?? 0.0
+              : (map['weight'] as num).toDouble())
+          : null,
       size: map['size'],
       shippingCost: map['shippingCost'],
-      metadata: map['metadata'] ?? {}, // Parse metadata
     );
   }
 
@@ -230,9 +231,10 @@ class OrderItem {
       'weight': weight,
       'size': size,
       'shippingCost': shippingCost,
-      'metadata': metadata, // Include metadata in map
     };
   }
+
+  Future<void> copyWith({required String status}) async {}
 }
 
 // ShippingInfo and PaymentInfo classes can remain, but are not used in your current Firestore structure.

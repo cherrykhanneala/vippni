@@ -1,8 +1,8 @@
 // initial_screen.dart
 
 import 'package:flutter/material.dart';
-import 'home/home_screen.dart';
-import 'auth/login_screen.dart';
+import '../features/home/home_screen.dart';
+import '../features/auth/login_screen.dart';
 
 class InitialScreen extends StatefulWidget {
   final bool isLoggedIn;

@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:vipnni/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
-import 'screens/products/product_upload_screen.dart';
-import 'screens/products/products_screen.dart';
-import 'screens/orders/orders_screen.dart';
-import 'screens/auth/forgot_password.dart';
-import 'screens/home/home_screen.dart';
+import 'features/auth/login_screen.dart';
+import 'features/auth/signup_screen.dart';
+import 'features/products/product_upload_screen.dart';
+import 'features/products/products_screen.dart';
+import 'features/orders/orders_screen.dart';
+import 'features/auth/forgot_password.dart';
+import 'features/home/home_screen.dart';
 import 'screens/profile_menu/seller_account.dart';
 import 'screens/splash_screen.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -20,6 +20,8 @@ import 'screens/dashboard/dashboard_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'theme.dart'; // <-- Add this import
+import 'features/auth/auth_wrapper.dart';
+import 'screens/onboarding_screen.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -138,7 +140,7 @@ class _MyAppState extends State<MyApp> {
       ],
       theme: AppTheme.light, // <-- Use your custom theme
       darkTheme: AppTheme.dark, // <-- Use your custom dark theme
-      home: const AuthWrapper(),
+      home: const SplashScreen(), // Set SplashScreen as initial screen
       routes: {
         '/home': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
@@ -151,6 +153,8 @@ class _MyAppState extends State<MyApp> {
               user: null,
             ),
         '/dashboard': (context) => const DashboardScreen(),
+        '/auth_wrapper': (context) => const AuthWrapper(),
+        '/onboarding': (context) => const OnboardingScreen(), // Add this line
       },
     );
   }
@@ -205,7 +209,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: _auth.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
           return const HomeScreen();
         } else {
