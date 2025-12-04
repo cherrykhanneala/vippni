@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Next.js
+nextjs-app/node_modules
+nextjs-app/.next
+nextjs-app/out
+nextjs-app/.env*
