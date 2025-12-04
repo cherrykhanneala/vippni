@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   collection,
   query,
@@ -54,15 +54,17 @@ export function useProducts() {
   const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null);
   const [filter, setFilter] = useState<string>('uploads');
   const initialFetchDone = useRef(false);
+  
+  const userId = useMemo(() => user?.uid, [user?.uid]);
 
   const fetchProducts = useCallback(async (refresh = false) => {
-    if (!user) return;
+    if (!userId) return;
 
     setLoading(true);
     try {
       let q = query(
         collection(db, 'products'),
-        where('vendorId', '==', user.uid),
+        where('vendorId', '==', userId),
         orderBy('name'),
         limit(10)
       );
@@ -70,7 +72,7 @@ export function useProducts() {
       if (filter !== 'uploads' && filter !== 'inventory') {
         q = query(
           collection(db, 'products'),
-          where('vendorId', '==', user.uid),
+          where('vendorId', '==', userId),
           where('status', '==', filter),
           orderBy('name'),
           limit(10)
@@ -101,7 +103,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, [user, filter, lastDoc]);
+  }, [userId, filter, lastDoc]);
 
   const getProduct = useCallback(async (productId: string): Promise<Product | null> => {
     try {
@@ -152,12 +154,12 @@ export function useProducts() {
   };
 
   const addProduct = async (productData: Omit<Product, 'id' | 'vendorId'>) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!userId) throw new Error('User not authenticated');
 
     try {
       const docRef = await addDoc(collection(db, 'products'), {
         ...productData,
-        vendorId: user.uid,
+        vendorId: userId,
       });
       return docRef.id;
     } catch (error) {
@@ -183,20 +185,18 @@ export function useProducts() {
 
   // Initial fetch when user is available
   useEffect(() => {
-    if (user && !initialFetchDone.current) {
+    if (userId && !initialFetchDone.current) {
       initialFetchDone.current = true;
       fetchProducts(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [userId, fetchProducts]);
 
   // Refetch when filter changes
   useEffect(() => {
-    if (user && initialFetchDone.current) {
+    if (userId && initialFetchDone.current) {
       fetchProducts(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, userId, fetchProducts]);
 
   return {
     products,

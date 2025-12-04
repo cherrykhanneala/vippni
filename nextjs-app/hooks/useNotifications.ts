@@ -21,8 +21,10 @@ export interface Notification {
 
 export function useNotifications() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notificationsData, setNotificationsData] = useState<{
+    items: Notification[];
+    loading: boolean;
+  }>({ items: [], loading: true });
   const unsubscribeRef = useRef<Unsubscribe | null>(null);
 
   const userId = useMemo(() => user?.uid, [user?.uid]);
@@ -34,9 +36,8 @@ export function useNotifications() {
       unsubscribeRef.current = null;
     }
 
+    // If no user, return empty state (loading will be set to false via initial state when user is null)
     if (!userId) {
-      setNotifications([]);
-      setLoading(false);
       return;
     }
 
@@ -51,11 +52,10 @@ export function useNotifications() {
         ...docSnap.data(),
         timestamp: docSnap.data().timestamp?.toDate() || new Date(),
       })) as Notification[];
-      setNotifications(notificationData);
-      setLoading(false);
+      setNotificationsData({ items: notificationData, loading: false });
     }, (error) => {
       console.error('Error fetching notifications:', error);
-      setLoading(false);
+      setNotificationsData(prev => ({ ...prev, loading: false }));
     });
 
     return () => {
@@ -64,8 +64,11 @@ export function useNotifications() {
         unsubscribeRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [userId]);
+
+  // Derive the final notifications and loading state
+  const notifications = userId ? notificationsData.items : [];
+  const loading = userId ? notificationsData.loading : false;
 
   return {
     notifications,
